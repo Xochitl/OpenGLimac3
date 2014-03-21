@@ -28,7 +28,7 @@ void main ()
     if(Time>13 && Time<=22.8){
 
         int kernel = int(floor(Time))-12;
-        if(kernel>8) kernel = 8;
+        if(kernel>6) kernel = 6;
 
     	for (int i=-kernel; i<kernel; i++){
         	for (int j=-kernel; j<kernel; j++) {

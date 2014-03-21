@@ -847,7 +847,7 @@ float spacebox_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.
 
 
         if( up == GLFW_PRESS ){
-               camera.radius -= 0.1 ;
+               camera.radius -= 0.05 ;
                 if (camera.radius < 0.1)
                 {
                     camera.radius = 10.f;
@@ -857,7 +857,7 @@ float spacebox_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.
         }
 
         if( down == GLFW_PRESS ){
-               camera.radius += 0.1 ;
+               camera.radius += 0.05 ;
                 if (camera.radius < 0.1)
                 {
                     camera.radius = 10.f;
@@ -890,15 +890,7 @@ float spacebox_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.
 
         // Camera movements
         int altPressed = glfwGetKey(GLFW_KEY_LSHIFT);
-     //  if (!altPressed && (leftButton == GLFW_PRESS || rightButton == GLFW_PRESS || middleButton == GLFW_PRESS))
-      //  {
-           /* int x; int y;
-            glfwGetMousePos(&x, &y);
-            guiStates.lockPositionX = x;
-            guiStates.lockPositionY = y;*/
-       // }
-        //if (altPressed = GLFW_PRESS)
-        //{
+
             glfwGetMousePos(&mousex, &mousey);
             diffLockPositionX = mousex - guiStates.lockPositionX;
             diffLockPositionY = mousey - guiStates.lockPositionY;
@@ -924,9 +916,7 @@ float spacebox_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.
             }
             guiStates.lockPositionX = mousex;
             guiStates.lockPositionY = mousey;
-  //      }
-  
-        // Get camera matrices
+
         glm::mat4 projection = glm::perspective(45.0f, widthf / heightf, 0.1f, 1000.f); 
         glm::mat4 worldToView = glm::lookAt(camera.eye, camera.o, camera.up);
         glm::mat4 objectToWorld;
