@@ -26,15 +26,11 @@ void main(void)
 {
 	float gamma = 1;
 	vec3 colorCorrected = texture(Texture1, uv).rgb;
-	if(Time>=19 && Time<24.8)
-		gamma = Time-18;
-	else if(Time>24.8 && Time<25.2)
-		gamma = -5;//(Time-24.8);
-	else if(Time>25.2 && gamma<1.0)
-		gamma += (Time-25.2);
-	//else
-		//gamma = 1;
-
+	if(Time>=17 && Time<=22.8)
+		gamma = Time-16;
+	else if(Time>22.8 && Time<24)
+		gamma = 2-(Time-22.8);
+	else gamma = 1;
     OutColor = vec4(pow(colorCorrected.r, 1.0f/gamma),pow(colorCorrected.g, 1.0f/gamma), pow(colorCorrected.b, 1.0f/gamma), 1.0);
 }
 

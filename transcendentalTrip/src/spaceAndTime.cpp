@@ -14,8 +14,6 @@
 
 #include "GL/glfw.h"
 #include "stb/stb_image.h"
-#include "imgui/imgui.h"
-#include "imgui/imguiRenderGL3.h"
 
 #include "glm/glm.hpp"
 #include "glm/vec3.hpp" // glm::vec3
@@ -92,7 +90,7 @@ struct GUIStates
 };
 const float GUIStates::MOUSE_PAN_SPEED = 0.001f;
 const float GUIStates::MOUSE_ZOOM_SPEED = 0.5;
-const float GUIStates::MOUSE_TURN_SPEED = 0.005f;
+const float GUIStates::MOUSE_TURN_SPEED = 0.003f;
 
 
 void init_gui_states(GUIStates & guiStates)
@@ -164,10 +162,9 @@ void camera_pan(Camera & c, float x, float y)
 
 int main( int argc, char **argv )
 {
-    int width = 1024, height=768;
+    int width = 1300, height=768;
     float widthf = (float) width, heightf = (float) height;
     double t;
-    float fps = 0.f;
 
     int VORTEX = 1;
     int UNIVERSE = 0;
@@ -215,14 +212,6 @@ int main( int argc, char **argv )
 
     // Enable vertical sync (on cards that support it)
     glfwSwapInterval( 1 );
-  /*  GLenum glerr = GL_NO_ERROR;
-    glerr = glGetError();*/
-
-    if (!imguiRenderGLInit(DroidSans_ttf, DroidSans_ttf_len))
-    {
-        fprintf(stderr, "Could not init GUI renderer.\n");
-        exit(EXIT_FAILURE);
-    }
 
     // Init viewer structures
     Camera camera;
@@ -400,23 +389,42 @@ int main( int argc, char **argv )
 
     // Try to load and compile shader
     int status;
-    ShaderGLSL star_shader;
-    const char * shaderFileStar = "src/star.glsl";
+    ShaderGLSL starsVortex_shader;
+    const char * shaderFileStarsVortex = "src/starsVortex.glsl";
     //int status = load_shader_from_file(gbuffer_shader, shaderFileGBuffer, ShaderGLSL::VERTEX_SHADER | ShaderGLSL::FRAGMENT_SHADER | ShaderGLSL::GEOMETRY_SHADER);
-    status = load_shader_from_file(star_shader, shaderFileStar, ShaderGLSL::VERTEX_SHADER | ShaderGLSL::FRAGMENT_SHADER);
+    status = load_shader_from_file(starsVortex_shader, shaderFileStarsVortex, ShaderGLSL::VERTEX_SHADER | ShaderGLSL::FRAGMENT_SHADER);
     if ( status == -1 )
     {
-        fprintf(stderr, "Error on loading  %s\n", shaderFileStar);
+        fprintf(stderr, "Error on loading  %s\n", shaderFileStarsVortex);
         exit( EXIT_FAILURE );
     }    
 
     // Compute locations for gbuffer_shader
-    GLuint star_projectionLocation = glGetUniformLocation(star_shader.program, "Projection");
-    GLuint star_viewLocation = glGetUniformLocation(star_shader.program, "View");
-    GLuint star_objectLocation = glGetUniformLocation(star_shader.program, "Object");
-    GLuint star_timeLocation = glGetUniformLocation(star_shader.program, "Time");
-    GLuint star_diffuseLocation = glGetUniformLocation(star_shader.program, "Diffuse");
-    GLuint star_specLocation = glGetUniformLocation(star_shader.program, "Spec");
+    GLuint starsVortex_projectionLocation = glGetUniformLocation(starsVortex_shader.program, "Projection");
+    GLuint starsVortex_viewLocation = glGetUniformLocation(starsVortex_shader.program, "View");
+    GLuint starsVortex_objectLocation = glGetUniformLocation(starsVortex_shader.program, "Object");
+    GLuint starsVortex_timeLocation = glGetUniformLocation(starsVortex_shader.program, "Time");
+    GLuint starsVortex_diffuseLocation = glGetUniformLocation(starsVortex_shader.program, "Diffuse");
+    GLuint starsVortex_specLocation = glGetUniformLocation(starsVortex_shader.program, "Spec");
+
+
+    ShaderGLSL starsSphere_shader;
+    const char * shaderFileStarsSphere = "src/starsSphere.glsl";
+    //int status = load_shader_from_file(gbuffer_shader, shaderFileGBuffer, ShaderGLSL::VERTEX_SHADER | ShaderGLSL::FRAGMENT_SHADER | ShaderGLSL::GEOMETRY_SHADER);
+    status = load_shader_from_file(starsSphere_shader, shaderFileStarsSphere, ShaderGLSL::VERTEX_SHADER | ShaderGLSL::FRAGMENT_SHADER);
+    if ( status == -1 )
+    {
+        fprintf(stderr, "Error on loading  %s\n", shaderFileStarsSphere);
+        exit( EXIT_FAILURE );
+    }    
+
+    // Compute locations for gbuffer_shader
+    GLuint starsSphere_projectionLocation = glGetUniformLocation(starsSphere_shader.program, "Projection");
+    GLuint starsSphere_viewLocation = glGetUniformLocation(starsSphere_shader.program, "View");
+    GLuint starsSphere_objectLocation = glGetUniformLocation(starsSphere_shader.program, "Object");
+    GLuint starsSphere_timeLocation = glGetUniformLocation(starsSphere_shader.program, "Time");
+    GLuint starsSphere_diffuseLocation = glGetUniformLocation(starsSphere_shader.program, "Diffuse");
+    GLuint starsSphere_specLocation = glGetUniformLocation(starsSphere_shader.program, "Spec");
 
 
 
@@ -491,10 +499,6 @@ int main( int argc, char **argv )
     GLuint fractalCube_diffuseLocation = glGetUniformLocation(fractalCube_shader.program, "Diffuse");
     GLuint fractalCube_specLocation = glGetUniformLocation(fractalCube_shader.program, "Spec");
 
-
-
-
-
     // SKYBOX SHADER
     ShaderGLSL skybox_shader;
     const char * shaderFileSkybox = "src/skybox.glsl";
@@ -515,47 +519,53 @@ int main( int argc, char **argv )
     GLuint camera_inverseViewProjectionLocation = glGetUniformLocation(skybox_shader.program, "InverseViewProjection");
 
 
-
-
-
-    // Load Blit shader
-    //CONDAMNED TO DISAPEAR
-    ShaderGLSL blit_shader;
-    const char * shaderFileBlit = "src/2_blita.glsl";
-    //int status = load_shader_from_file(blit_shader, shaderFileBlit, ShaderGLSL::VERTEX_SHADER | ShaderGLSL::FRAGMENT_SHADER | ShaderGLSL::GEOMETRY_SHADER);
-    status = load_shader_from_file(blit_shader, shaderFileBlit, ShaderGLSL::VERTEX_SHADER | ShaderGLSL::FRAGMENT_SHADER);
+    // Load light accumulation shader
+    ShaderGLSL vortexLighting_shader;
+    const char * shaderFileVortexLighting = "src/vortexLight.glsl";
+    //int status = load_shader_from_file(lighting_shader, shaderFileLighting, ShaderGLSL::VERTEX_SHADER | ShaderGLSL::FRAGMENT_SHADER | ShaderGLSL::GEOMETRY_SHADER);
+    status = load_shader_from_file(vortexLighting_shader, shaderFileVortexLighting, ShaderGLSL::VERTEX_SHADER | ShaderGLSL::FRAGMENT_SHADER);
     if ( status == -1 )
     {
-        fprintf(stderr, "Error on loading  %s\n", shaderFileBlit);
+        fprintf(stderr, "Error on loading  %s\n", shaderFileVortexLighting);
         exit( EXIT_FAILURE );
     }    
-
-    // Compute locations for blit_shader
-    GLuint blit_tex1Location = glGetUniformLocation(blit_shader.program, "Texture1");
+    // Compute locations for lighting_shader
+    GLuint vortexLighting_materialLocation = glGetUniformLocation(vortexLighting_shader.program, "Material");
+    GLuint vortexLighting_normalLocation = glGetUniformLocation(vortexLighting_shader.program, "Normal");
+    GLuint vortexLighting_depthLocation = glGetUniformLocation(vortexLighting_shader.program, "Depth");
+    GLuint vortexLighting_inverseViewProjectionLocation = glGetUniformLocation(vortexLighting_shader.program, "InverseViewProjection");
+    GLuint vortexLighting_cameraPositionLocation = glGetUniformLocation(vortexLighting_shader.program, "CameraPosition");
+    GLuint vortexLighting_lightPositionLocation = glGetUniformLocation(vortexLighting_shader.program, "LightPosition");
+    GLuint vortexLighting_lightColorLocation = glGetUniformLocation(vortexLighting_shader.program, "LightColor");
+    GLuint vortexLighting_lightIntensityLocation = glGetUniformLocation(vortexLighting_shader.program, "LightIntensity");
+    GLuint vortexLighting_skyboxLocation = glGetUniformLocation(vortexLighting_shader.program, "Skybox");
+    GLuint vortexLighting_numLightLocation = glGetUniformLocation(vortexLighting_shader.program, "NumLight");
 
 
 
     // Load light accumulation shader
-    ShaderGLSL lighting_shader;
-    const char * shaderFileLighting = "src/2_lighta.glsl";
+    ShaderGLSL universeLighting_shader;
+    const char * shaderFileUniverseLighting = "src/universeLight.glsl";
     //int status = load_shader_from_file(lighting_shader, shaderFileLighting, ShaderGLSL::VERTEX_SHADER | ShaderGLSL::FRAGMENT_SHADER | ShaderGLSL::GEOMETRY_SHADER);
-    status = load_shader_from_file(lighting_shader, shaderFileLighting, ShaderGLSL::VERTEX_SHADER | ShaderGLSL::FRAGMENT_SHADER);
+    status = load_shader_from_file(universeLighting_shader, shaderFileUniverseLighting, ShaderGLSL::VERTEX_SHADER | ShaderGLSL::FRAGMENT_SHADER);
     if ( status == -1 )
     {
-        fprintf(stderr, "Error on loading  %s\n", shaderFileLighting);
+        fprintf(stderr, "Error on loading  %s\n", shaderFileUniverseLighting);
         exit( EXIT_FAILURE );
     }    
     // Compute locations for lighting_shader
-    GLuint lighting_materialLocation = glGetUniformLocation(lighting_shader.program, "Material");
-    GLuint lighting_normalLocation = glGetUniformLocation(lighting_shader.program, "Normal");
-    GLuint lighting_depthLocation = glGetUniformLocation(lighting_shader.program, "Depth");
-    GLuint lighting_inverseViewProjectionLocation = glGetUniformLocation(lighting_shader.program, "InverseViewProjection");
-    GLuint lighting_cameraPositionLocation = glGetUniformLocation(lighting_shader.program, "CameraPosition");
-    GLuint lighting_lightPositionLocation = glGetUniformLocation(lighting_shader.program, "LightPosition");
-    GLuint lighting_lightColorLocation = glGetUniformLocation(lighting_shader.program, "LightColor");
-    GLuint lighting_lightIntensityLocation = glGetUniformLocation(lighting_shader.program, "LightIntensity");
-    GLuint lighting_skyboxLocation = glGetUniformLocation(lighting_shader.program, "Skybox");
-    GLuint lighting_numLightLocation = glGetUniformLocation(lighting_shader.program, "NumLight");
+    GLuint universeLighting_materialLocation = glGetUniformLocation(universeLighting_shader.program, "Material");
+    GLuint universeLighting_normalLocation = glGetUniformLocation(universeLighting_shader.program, "Normal");
+    GLuint universeLighting_depthLocation = glGetUniformLocation(universeLighting_shader.program, "Depth");
+    GLuint universeLighting_inverseViewProjectionLocation = glGetUniformLocation(universeLighting_shader.program, "InverseViewProjection");
+    GLuint universeLighting_cameraPositionLocation = glGetUniformLocation(universeLighting_shader.program, "CameraPosition");
+    GLuint universeLighting_lightPositionLocation = glGetUniformLocation(universeLighting_shader.program, "LightPosition");
+    GLuint universeLighting_lightColorLocation = glGetUniformLocation(universeLighting_shader.program, "LightColor");
+    GLuint universeLighting_lightIntensityLocation = glGetUniformLocation(universeLighting_shader.program, "LightIntensity");
+    GLuint universeLighting_skyboxLocation = glGetUniformLocation(universeLighting_shader.program, "Skybox");
+    GLuint universeLighting_numLightLocation = glGetUniformLocation(universeLighting_shader.program, "NumLight");
+    GLuint universeLighting_timeLocation = glGetUniformLocation(universeLighting_shader.program, "Time");
+
 
     // Load geometry
     int   cube_triangleCount = 12;
@@ -569,11 +579,7 @@ int main( int argc, char **argv )
     float cube_uvs[] = {0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f, 1.f, 1.f, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f,  1.f, 0.f,  1.f, 1.f,  0.f, 1.f,  1.f, 1.f,  0.f, 0.f, 0.f, 0.f, 1.f, 1.f,  1.f, 0.f,  };
     float cube_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5 };
     float cube_normals[] = {0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, };
-    //int   plane_triangleCount = 2;
-    int   plane_triangleList[] = {0, 1, 2, 2, 1, 3}; 
-    float plane_uvs[] = {0.f, 0.f, 0.f, 10.f, 10.f, 0.f, 10.f, 10.f};
-    float plane_vertices[] = {-50.0, -1.0, 50.0, 50.0, -1.0, 50.0, -50.0, -1.0, -50.0, 50.0, -1.0, -50.0};
-    float plane_normals[] = {0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0};
+
     int   quad_triangleCount = 2;
     int   quad_triangleList[] = {0, 1, 2, 2, 1, 3}; 
     float quad_vertices[] =  {-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0};
@@ -609,11 +615,8 @@ int main( int argc, char **argv )
 
 float star_normals[] = {0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1};
 float spacebox_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5 };
-//float vortexSkybox_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5, 0.5, -0.5, -0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, 0.5, -0.5, 0.5, 0.5 };
-
 
     for(unsigned int i = 0; i<sizeof(cube_vertices); ++i){
-        //vortexSkybox_vertices[i] = cube_vertices[i]*100000;
         spacebox_vertices[i] = cube_vertices[i]*100000;
         cube_vertices[i] = cube_vertices[i]*0.05;
     }
@@ -626,8 +629,8 @@ float spacebox_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.
     glGenVertexArrays(5, vao);
 
     // Vertex Buffer Objects
-    GLuint vbo[17];
-    glGenBuffers(17, vbo);
+    GLuint vbo[16];
+    glGenBuffers(16, vbo);
 
    glBindVertexArray(vao[0]);
     // Bind indices and upload data
@@ -673,36 +676,28 @@ float spacebox_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.
 
 
 
-
-
-    // Plane
+    //little starts
     glBindVertexArray(vao[2]);
     // Bind indices and upload data
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[8]);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(plane_triangleList), plane_triangleList, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(star_triangleList), star_triangleList, GL_STATIC_DRAW);
     // Bind vertices and upload data
     glBindBuffer(GL_ARRAY_BUFFER, vbo[9]);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_vertices), plane_vertices, GL_STATIC_DRAW);
-    // Bind normals and upload data
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(littleStar_vertices), littleStar_vertices, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, vbo[10]);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_normals), plane_normals, GL_STATIC_DRAW);
-    // Bind uv coords and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[11]);
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane_uvs), plane_uvs, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(star_normals), star_normals, GL_STATIC_DRAW);
 
     // Quad
     glBindVertexArray(vao[3]);
     // Bind indices and upload data
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[12]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[11]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(quad_triangleList), quad_triangleList, GL_STATIC_DRAW);
     // Bind vertices and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[13]);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[12]);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), quad_vertices, GL_STATIC_DRAW);
@@ -711,24 +706,22 @@ float spacebox_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.
      // Stars
     glBindVertexArray(vao[4]);
     // Bind indices and upload data
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[14]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo[13]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(star_triangleList), star_triangleList, GL_STATIC_DRAW);
     // Bind vertices and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[15]);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[14]);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
     glBufferData(GL_ARRAY_BUFFER, sizeof(star_vertices), star_vertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[16]);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo[15]);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*3, (void*)0);
     glBufferData(GL_ARRAY_BUFFER, sizeof(star_normals), star_normals, GL_STATIC_DRAW);
 
+
     // Unbind everything. Potentially illegal on some implementations
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-
-
 
 
 
@@ -741,8 +734,8 @@ float spacebox_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.
 
     // Create color texture
     glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+   // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -750,8 +743,8 @@ float spacebox_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.
 
     // Create normal texture
     glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -794,11 +787,9 @@ float spacebox_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.
 
     GLuint effectsFbo;
     GLuint effectsTextures[2];
-   // GLuint effectsDrawBuffers[2];
     glGenTextures(2, effectsTextures);
     // Create color texture
     glBindTexture(GL_TEXTURE_2D, effectsTextures[0]);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -807,42 +798,21 @@ float spacebox_vertices[] = {-0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, 0.5, 0.5, 0.
 
     // Create normal texture
     glBindTexture(GL_TEXTURE_2D, effectsTextures[1]);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-     /*   // Create normal texture
-    glBindTexture(GL_TEXTURE_2D, effectsTextures[2]);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, 0);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);*/
-
-     glGenFramebuffers(1, &effectsFbo);
+    glGenFramebuffers(1, &effectsFbo);
 
 
-int numLight=0;
-
-float pLightsX = 0;
-float pLightsY = 0;
-float pLightsZ = 30.;
-
-float pLightsR = 0;
-float pLightsG = 0;
-float pLightsB = 0;
-
+    int numLight=0;
 
     int mousex = 0;
     int mousey = 0;
     int diffLockPositionX = 0;
     int diffLockPositionY = 0;
-
-
 
     do
     {
@@ -877,7 +847,7 @@ float pLightsB = 0;
 
 
         if( up == GLFW_PRESS ){
-               camera.radius -= 0.2 ;
+               camera.radius -= 0.1 ;
                 if (camera.radius < 0.1)
                 {
                     camera.radius = 10.f;
@@ -887,7 +857,7 @@ float pLightsB = 0;
         }
 
         if( down == GLFW_PRESS ){
-               camera.radius += 0.2 ;
+               camera.radius += 0.1 ;
                 if (camera.radius < 0.1)
                 {
                     camera.radius = 10.f;
@@ -918,33 +888,17 @@ float pLightsB = 0;
            camera_compute(camera);
         }
 
-if( leftButton == GLFW_PRESS ){
-        glfwGetMousePos(&mousex, &mousey);
-        diffLockPositionX = mousex - guiStates.lockPositionX;
-        diffLockPositionY = mousey - guiStates.lockPositionY;
-        camera.theta -= 1.f * -0.005*diffLockPositionX;
-        camera.phi   += 1.f * -0.005*diffLockPositionY;
-        if (camera.phi >= (2 * M_PI) - 0.1 )
-            camera.phi = 0.00001;
-        else if (camera.phi <= 0 )
-            camera.phi = 2 * M_PI - 0.1;
-
-        camera_compute(camera);
-        guiStates.lockPositionX = mousex;
-        guiStates.lockPositionY = mousey;
-
-}
         // Camera movements
         int altPressed = glfwGetKey(GLFW_KEY_LSHIFT);
-        if (!altPressed && (leftButton == GLFW_PRESS || rightButton == GLFW_PRESS || middleButton == GLFW_PRESS))
-        {
-            int x; int y;
+     //  if (!altPressed && (leftButton == GLFW_PRESS || rightButton == GLFW_PRESS || middleButton == GLFW_PRESS))
+      //  {
+           /* int x; int y;
             glfwGetMousePos(&x, &y);
             guiStates.lockPositionX = x;
-            guiStates.lockPositionY = y;
-        }
-        if (altPressed == GLFW_PRESS)
-        {
+            guiStates.lockPositionY = y;*/
+       // }
+        //if (altPressed = GLFW_PRESS)
+        //{
             glfwGetMousePos(&mousex, &mousey);
             diffLockPositionX = mousex - guiStates.lockPositionX;
             diffLockPositionY = mousey - guiStates.lockPositionY;
@@ -970,7 +924,7 @@ if( leftButton == GLFW_PRESS ){
             }
             guiStates.lockPositionX = mousex;
             guiStates.lockPositionY = mousey;
-        }
+  //      }
   
         // Get camera matrices
         glm::mat4 projection = glm::perspective(45.0f, widthf / heightf, 0.1f, 1000.f); 
@@ -1009,11 +963,8 @@ if( leftButton == GLFW_PRESS ){
 
 
 
-
-       
-
-            glBindFramebuffer(GL_FRAMEBUFFER, gbufferFbo);
-            glDrawBuffers(2, gbufferDrawBuffers);
+        glBindFramebuffer(GL_FRAMEBUFFER, gbufferFbo);
+        glDrawBuffers(2, gbufferDrawBuffers);
 
             // Viewport 
            glViewport( 0, 0, width, height  );
@@ -1024,28 +975,50 @@ if( leftButton == GLFW_PRESS ){
             glEnable(GL_DEPTH_TEST);
 
             // Bind gbuffer shader
-            glUseProgram(star_shader.program);
+            glUseProgram(starsVortex_shader.program);
             // Upload uniforms
-            glUniformMatrix4fv(star_projectionLocation, 1, 0, glm::value_ptr(projection));
-            glUniformMatrix4fv(star_viewLocation, 1, 0, glm::value_ptr(worldToView));
-            glUniformMatrix4fv(star_objectLocation, 1, 0, glm::value_ptr(objectToWorld));
-            glUniform1f(star_timeLocation, t);
-            glUniform1i(star_diffuseLocation, 0);
-            glUniform1i(star_specLocation, 1);
+            glUniformMatrix4fv(starsVortex_projectionLocation, 1, 0, glm::value_ptr(projection));
+            glUniformMatrix4fv(starsVortex_viewLocation, 1, 0, glm::value_ptr(worldToView));
+            glUniformMatrix4fv(starsVortex_objectLocation, 1, 0, glm::value_ptr(objectToWorld));
+            glUniform1f(starsVortex_timeLocation, t);
+            glUniform1i(starsVortex_diffuseLocation, 0);
+            glUniform1i(starsVortex_specLocation, 1);
+
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, textures[0]);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, textures[1]); 
 
-            // glDrawBuffers(2, starDrawBuffers); // paramètre qui indique où on va dessiner (mais ne dessine pas)
             if(VORTEX == 1){
+                //Vortex Etoile
                 glBindVertexArray(vao[4]);
                 glDrawElementsInstanced(GL_TRIANGLES, star_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, 2000);
             }
             else if(UNIVERSE == 1){
-                //Sphere etoile
+                //Vortex Etoile
                 glBindVertexArray(vao[4]);
-                glDrawElementsInstanced(GL_TRIANGLES, star_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, 12000);
+                glDrawElementsInstanced(GL_TRIANGLES, star_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, 2000);
+
+                // Bind gbuffer shader
+                glUseProgram(starsSphere_shader.program);
+                // Upload uniforms
+                glUniformMatrix4fv(starsSphere_projectionLocation, 1, 0, glm::value_ptr(projection));
+                glUniformMatrix4fv(starsSphere_viewLocation, 1, 0, glm::value_ptr(worldToView));
+                glUniformMatrix4fv(starsSphere_objectLocation, 1, 0, glm::value_ptr(objectToWorld));
+                glUniform1f(starsSphere_timeLocation, t);
+                glUniform1i(starsSphere_diffuseLocation, 0);
+                glUniform1i(starsSphere_specLocation, 1);
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, textures[0]);
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, textures[1]); 
+
+                //Sphere etoile
+                glBindVertexArray(vao[2]);
+                glDrawElementsInstanced(GL_TRIANGLES, star_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, 10000);
+
+
 
                 //Sphere Anneaux Cubique
                 // Bind cube shader
@@ -1065,15 +1038,15 @@ if( leftButton == GLFW_PRESS ){
                 glBindVertexArray(vao[1]);
                 glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, 900);
 
-                                // Bind cube shader
+                // Bind cube shader
                 glUseProgram(fractalCube_shader.program);
                 // Upload uniforms
-                glUniformMatrix4fv(cube_projectionLocation, 1, 0, glm::value_ptr(projection));
-                glUniformMatrix4fv(cube_viewLocation, 1, 0, glm::value_ptr(worldToView));
-                glUniformMatrix4fv(cube_objectLocation, 1, 0, glm::value_ptr(objectToWorld));
-                glUniform1f(cube_timeLocation, t);
-                glUniform1i(cube_diffuseLocation, 0);
-                glUniform1i(cube_specLocation, 1);
+                glUniformMatrix4fv(fractalCube_projectionLocation, 1, 0, glm::value_ptr(projection));
+                glUniformMatrix4fv(fractalCube_viewLocation, 1, 0, glm::value_ptr(worldToView));
+                glUniformMatrix4fv(fractalCube_objectLocation, 1, 0, glm::value_ptr(objectToWorld));
+                glUniform1f(fractalCube_timeLocation, t);
+                glUniform1i(fractalCube_diffuseLocation, 0);
+                glUniform1i(fractalCube_specLocation, 1);
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, textures[0]);
                 glActiveTexture(GL_TEXTURE1);
@@ -1083,98 +1056,219 @@ if( leftButton == GLFW_PRESS ){
                 glDrawElementsInstanced(GL_TRIANGLES, cube_triangleCount * 3, GL_UNSIGNED_INT, (void*)0, 2000);
 
             }
-
-            //glBindVertexArray(vao[1]);
-            //glDrawElements(GL_TRIANGLES, plane_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
             // Unbind framebuffer
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 
 
 
-            glBindFramebuffer(GL_FRAMEBUFFER, effectsFbo);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, effectsTextures[1], 0);
+           if(VORTEX == 1){
+                glBindFramebuffer(GL_FRAMEBUFFER, effectsFbo);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, effectsTextures[1], 0);
 
-            // Viewport 
-            glViewport( 0, 0, width, height );
-            // Clear the front buffer
-            glClear(GL_COLOR_BUFFER_BIT);
+                // Viewport 
+                glViewport( 0, 0, width, height );
+                // Clear the front buffer
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            // Bind lighting shader
-            glUseProgram(lighting_shader.program);
-            // Upload uniforms
-            glUniform1i(lighting_materialLocation, 0);
-            glUniform1i(lighting_normalLocation, 1);
-            glUniform1i(lighting_depthLocation, 2);
-            glUniform1i(lighting_skyboxLocation, 3);
-            glUniform3fv(lighting_cameraPositionLocation, 1, glm::value_ptr(camera.eye));
-            glUniformMatrix4fv(lighting_inverseViewProjectionLocation, 1, 0, glm::value_ptr(screenToWorld));
+                // Bind lighting shader
+                glUseProgram(vortexLighting_shader.program);
+                // Upload uniforms
+                glUniform1i(vortexLighting_materialLocation, 0);
+                glUniform1i(vortexLighting_normalLocation, 1);
+                glUniform1i(vortexLighting_depthLocation, 2);
+                glUniform1i(vortexLighting_skyboxLocation, 3);
+                glUniform3fv(vortexLighting_cameraPositionLocation, 1, glm::value_ptr(camera.eye));
+                glUniformMatrix4fv(vortexLighting_inverseViewProjectionLocation, 1, 0, glm::value_ptr(screenToWorld));
 
-            // Bind color to unit 0
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);        
-            // Bind normal to unit 1
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);    
-            // Bind depth to unit 2
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);       
+                // Bind color to unit 0
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);        
+                // Bind normal to unit 1
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);    
+                // Bind depth to unit 2
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);       
 
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, effectsTextures[0]);    
+                glActiveTexture(GL_TEXTURE3);
+                glBindTexture(GL_TEXTURE_2D, effectsTextures[0]);    
 
-            // Blit above the rest
-            glDisable(GL_DEPTH_TEST);
+                // Blit above the rest
+                glDisable(GL_DEPTH_TEST);
 
-           glEnable(GL_BLEND);
-           glBlendFunc(GL_ONE, GL_ONE);
+               glEnable(GL_BLEND);
+               glBlendFunc(GL_ONE, GL_ONE);
 
-            for (int i = 0; i < numLights; ++i)
-            {
-                 glUniform1i(lighting_numLightLocation, numLight);
-                ++numLight;
+                for (int i = 0; i < numLights; ++i)
+                {
+                     glUniform1i(vortexLighting_numLightLocation, numLight);
+                    ++numLight;
 
-                float tl = t*i;
-                float posZ = 0.;
-                float lightIntensity = 0.;
-                float lightPosition[3] = { 0., 0., 0.};
-                float lightColor[3] = { 0., 0., 0.};
+                    float tl = t*0.5 * i;
+                    float lightIntensity = 10.;
+                    float lightPosition[3] = { 0., 0., -i*3+13};
+                    float lightColor[3] = { sinf(tl) *  1.1, 0.7 - cosf(tl), 1 -sinf(tl)};
 
-                if(VORTEX == 1){
-                    tl = t*0.5 * i;
-                    lightPosition[2] = -i*3+13;
-                    lightIntensity = 10.;
-                    lightColor[0] = sinf(tl) *  0.75; 
-                    lightColor[1] = 1 - cosf(tl);
-                    lightColor[2] = -sinf(tl);
+                    glUniform3fv(vortexLighting_lightPositionLocation, 1, lightPosition);
+                    glUniform3fv(vortexLighting_lightColorLocation, 1, lightColor);
+                    glUniform1f(vortexLighting_lightIntensityLocation, lightIntensity);
+
+                    // Draw quad
+                    glBindVertexArray(vao[3]);
+                    glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
                 }
-                //Update light uniforms
-                //float lightPosition[3] = { sinf(tl) * 10.f, -0.5f, cosf(tl) * 10.f};
-                //float lightColor[3] = {sinf(tl) *  1.f, 1.f - cosf(tl), -sinf(tl)};
-   
-                //float lightColor[3] = {0.f, 0.5f, 1.f};
 
-                /*if(UNIVERSE == 1){
-                    float lightPosition[3] = { pLightsX, pLightsY, pLightsZ+i*5};
-                    lightIntensity = 10.f;
-                    float lightColor[3] = {pLightsR*i, pLightsG, pLightsB};
-                }*/
+                glDisable(GL_BLEND);
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                numLight=0;
+           }
 
 
 
 
-                glUniform3fv(lighting_lightPositionLocation, 1, lightPosition);
-                glUniform3fv(lighting_lightColorLocation, 1, lightColor);
-                glUniform1f(lighting_lightIntensityLocation, lightIntensity);
 
-                // Draw quad
-                glBindVertexArray(vao[3]);
-                glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-            }
 
-            glDisable(GL_BLEND);
-            numLight=0;
-          glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            if(UNIVERSE == 1){
+                glBindFramebuffer(GL_FRAMEBUFFER, effectsFbo);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 , GL_TEXTURE_2D, effectsTextures[1], 0);
+
+                // Viewport 
+               glViewport( 0, 0, width, height );
+                // Clear the front buffer
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+                // Bind lighting shader
+                glUseProgram(universeLighting_shader.program);
+                // Upload uniforms
+                glUniform1i(universeLighting_materialLocation, 0);
+                glUniform1i(universeLighting_normalLocation, 1);
+                glUniform1i(universeLighting_depthLocation, 2);
+                glUniform1i(universeLighting_skyboxLocation, 3);
+                glUniform3fv(universeLighting_cameraPositionLocation, 1, glm::value_ptr(camera.eye));
+                glUniformMatrix4fv(universeLighting_inverseViewProjectionLocation, 1, 0, glm::value_ptr(screenToWorld));
+                glUniform1i(universeLighting_timeLocation, t);
+                // Bind color to unit 0
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);        
+                // Bind normal to unit 1
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, gbufferTextures[1]);    
+                // Bind depth to unit 2
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);       
+
+                glActiveTexture(GL_TEXTURE3);
+                glBindTexture(GL_TEXTURE_2D, effectsTextures[0]);    
+
+                // Blit above the rest
+                glDisable(GL_DEPTH_TEST);
+
+               glEnable(GL_BLEND);
+               glBlendFunc(GL_ONE, GL_ONE);
+
+                for (int i = 0; i < numLights; ++i)
+                {
+                     glUniform1i(universeLighting_numLightLocation, numLight);
+                    ++numLight;
+
+                    float lightIntensity = 6;
+                    float lightPosition[3] = {0., 0., 0.};
+                    float lightColor[3] = {0., 0., 0.};
+
+
+                    //CUBE FRACTAL
+                    if(i==0){
+                        lightPosition[0] = 19.3;
+                        lightPosition[1] = 22.9;
+                        lightPosition[2] = 2.1;
+                        lightColor[0] = 0.1;
+                        lightColor[1] = 0.5;
+                        lightColor[2] = 0.7;
+                        lightIntensity = 4;
+                    }
+
+                    //SPHERE ETOILE
+                    if(i==1){
+                        lightPosition[0] = 0.;
+                        lightPosition[1] = 0.;
+                        lightPosition[2] = 0.;
+                        lightColor[0] = 0.4;
+                        lightColor[1] = 0.6;
+                        lightColor[2] = 0.88;
+                    }
+                    else if(i==2){
+                        lightPosition[0] = 0.;
+                        lightPosition[1] = 0.;
+                        lightPosition[2] = 4.7;
+                        lightColor[0] = 0.61;
+                        lightColor[1] = 0.29;
+                        lightColor[2] = 0.42;
+                    }
+
+                    // VORTEX TEMPOREL
+                    if(i==3){
+                        lightPosition[0] = 0.;
+                        lightPosition[1] = 0.;
+                        lightPosition[2] = 40+cos(t)*20;
+                        lightColor[0] = 0.2;
+                        lightColor[1] = 0.9*cos(t);
+                        lightColor[2] = 0.5;
+                    }
+                    else if(i==4){
+                     lightPosition[0] = 0.;
+                        lightPosition[1] = 0.;
+                        lightPosition[2] = 40+cos(t*2)*20;
+                        lightColor[0] = 0.8*cos(t);
+                        lightColor[1] = 0.4;
+                        lightColor[2] = 0.3;
+                    }
+                    else if(i==5){
+                        lightPosition[0] = 0.;
+                        lightPosition[1] = 0.;
+                        lightPosition[2] = 40+cos(t*3)*20;
+                        lightColor[0] = 0.5;
+                        lightColor[1] = 0.1;
+                        lightColor[2] = 0.7*cos(t);
+                    }
+
+                    else if(i==6){
+                        lightPosition[0] = 0.;
+                        lightPosition[1] = 0.;
+                        lightPosition[2] = 40+cos(t*4)*20;
+                        lightColor[0] = 0.6;
+                        lightColor[1] = 0.3;
+                        lightColor[2] = 0.4;
+                    }
+
+
+                    else if(i==7){
+                        lightPosition[0] = 0.;
+                        lightPosition[1] = 0.;
+                        lightPosition[2] = 40+cos(t*5)*20;
+                        lightColor[0] = 0.2;
+                        lightColor[1] = 0.3;
+                        lightColor[2] = 1*cos(t);
+                    }
+
+
+
+                    glUniform3fv(universeLighting_lightPositionLocation, 1, lightPosition);
+                    glUniform3fv(universeLighting_lightColorLocation, 1, lightColor);
+                    glUniform1f(universeLighting_lightIntensityLocation, lightIntensity);
+
+                    // Draw quad
+                   glBindVertexArray(vao[3]);
+                   glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
+                }
+  
+
+                glDisable(GL_BLEND);
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                numLight=0;
+           }
+
 
 
         glBindFramebuffer(GL_FRAMEBUFFER, effectsFbo);
@@ -1200,9 +1294,6 @@ if( leftButton == GLFW_PRESS ){
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-
-
-
         //GAMMA
         // Clear the front buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1223,13 +1314,10 @@ if( leftButton == GLFW_PRESS ){
 
 
 
-
-
-
-        if(t>24.8 && UNIVERSE==0){
+        if(t>22.8 && UNIVERSE==0){
                 VORTEX = 0;
                 UNIVERSE = 1;
-                numLights = 3;
+                numLights = 8;
                 glDeleteTextures(6, timeVortexTextures);
                     for(unsigned int i = 0; i<sizeof(cube_vertices); ++i){
                       spacebox_vertices[i] = cube_vertices[i]*1000;//00;//pour VORTEX !
@@ -1242,88 +1330,7 @@ if( leftButton == GLFW_PRESS ){
          glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-             // Stars
-   /* glBindVertexArray(vao[4]);
-    // Bind vertices and upload data
-    glBindBuffer(GL_ARRAY_BUFFER, vbo[15]);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(GL_FLOAT)*2, (void*)0);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(littleStar_vertices), littleStar_vertices, GL_STATIC_DRAW);
-             glBindVertexArray(0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);*/
         }
-
-
-
-        // Bind blit shader
-        glUseProgram(blit_shader.program);
-        // Upload uniforms
-        glUniform1i(blit_tex1Location, 0);
-        // use only unit 0
-        glActiveTexture(GL_TEXTURE0);
-
-        // Viewport 
-        glViewport( 0, 0, width/3, height/4  );
-        // Bind texture
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[0]);        
-        // Draw quad
-        glBindVertexArray(vao[3]);
-        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-        // Viewport 
-        glViewport( width/3, 0, width/3, height/4  );
-        // Bind texture
-        glBindTexture(GL_TEXTURE_2D, effectsTextures[1]);        
-        // Draw quad
-        glBindVertexArray(vao[3]);
-        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-        // Viewport 
-        glViewport( width/3 * 2, 0, width/3, height/4  );
-        // Bind texture
-        glBindTexture(GL_TEXTURE_2D, gbufferTextures[2]);        
-        // Draw quad
-        glBindVertexArray(vao[3]);
-        glDrawElements(GL_TRIANGLES, quad_triangleCount * 3, GL_UNSIGNED_INT, (void*)0);
-        
-#if 1
-        // Draw UI
-        glDisable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glViewport(0, 0, width, height);
-
-        unsigned char mbut = 0;
-        int mscroll = 0;
-        int mousex; int mousey;
-        glfwGetMousePos(&mousex, &mousey);
-        mousey = height - mousey - 50;
-
-        if( leftButton == GLFW_PRESS )
-            mbut |= IMGUI_MBUT_LEFT;
-
-        imguiBeginFrame(mousex, mousey, mbut, mscroll);
-        int logScroll = 0;
-        char lineBuffer[512];
-        imguiBeginScrollArea("001", width - 210, height - 310, 200, 300, &logScroll);
-        sprintf(lineBuffer, "FPS %f", fps);
-        imguiLabel(lineBuffer);
-        imguiSlider("Lights", &numLights, 0.0, 100.0, 1.0);
-
-        imguiSlider("pLightX", &pLightsX, -500.0, 500.0, .01);
-        imguiSlider("pLighty", &pLightsY, -500.0, 500.0, .01);
-        imguiSlider("pLightZ", &pLightsZ, -500.0, 500.0, .01);
-
-        imguiSlider("pLightsR", &pLightsR, 0.0, 1.0, 0.01);
-        imguiSlider("pLightsG", &pLightsG, 0.0, 1.0, 0.01);
-        imguiSlider("pLightsB", &pLightsB, 0.0, 1.0, 0.01);
-
-
-
-        imguiEndScrollArea();
-        imguiEndFrame();
-        imguiRenderGLDraw(width, height); 
-
-        glDisable(GL_BLEND);
-#endif
         
         // Check for errors
         GLenum err = glGetError();
@@ -1339,9 +1346,6 @@ if( leftButton == GLFW_PRESS ){
     } // Check if the ESC key was pressed or the window was closed
     while( glfwGetKey( GLFW_KEY_ESC ) != GLFW_PRESS &&
            glfwGetWindowParam( GLFW_OPENED ) );
-
-    // Clean UI
-    imguiRenderGLDestroy();
 
     // Close OpenGL window and terminate GLFW
     glfwTerminate();

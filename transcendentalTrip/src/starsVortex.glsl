@@ -19,53 +19,40 @@ out vec3 position;
 void main(void)
 {	
 
+	float pi = 3.141592654;
+	float teta = pi/2000;
+	float sigma = pi*2/200;
+
 	uv = VertexTexCoord;
 	normal = vec3(Object * vec4(VertexNormal, 1.0));
 	position = vec3(Object * vec4(VertexPosition, 1.0));
 
-	float pi = 3.141592654;
-
-	mat3 rotZ = mat3(
-					cos(pi*Time*0.2), -sin(pi*Time*0.2), 0,
-					sin(pi*Time*0.2), cos(pi*Time*0.2), 0,
-					0, 0, 1 
-					);
-
-		mat3 rotX = mat3(
-						1, 0, 0,
-						0, cos(pi*0.02*Time),-sin(pi*0.02*Time),
-						0, sin(pi*0.02*Time), cos(pi*0.02*Time) 
-						);
-
-
-		mat3 rotY = mat3(
-						cos(pi*0.02*Time), 0, sin(pi*0.02*Time),
-						0, 1, 0,
-						-sin(pi*0.02*Time), 0, cos(pi*0.02*Time) 
-					);
-
-
-	if(Time<=22.8){
-		position.x += CameraPosition.x;
-		position.y += CameraPosition.y;
-		position.z -= Time*200;
-
-		position*=(mat3(InverseViewProjection)*0.000095);
-		position*=rotZ;
+	//Spirate d'entrée
+	if(Time<22.8 && gl_InstanceID<2000){
+		position.x += 0.15*pow(3, teta*gl_InstanceID)*cos(teta*gl_InstanceID*Time*10);
+		position.y += 0.15*pow(3, teta*gl_InstanceID)*sin(teta*gl_InstanceID*Time*10);
+		position.z -= gl_InstanceID*0.1 - Time*5;
 	}
-	else{
-		position*=rotX*rotY;
-		position.x += CameraPosition.x;
-		position.y += CameraPosition.y;
-		position.z += CameraPosition.z;
+	else if(Time<35 && gl_InstanceID<2000){
+		position.x += 0.15*pow(2, teta*gl_InstanceID)*cos(teta*gl_InstanceID*Time*5);
+		position.y += 0.15*pow(2, teta*gl_InstanceID)*sin(teta*gl_InstanceID*Time*5);
+		position.z += gl_InstanceID*0.01;
+		position.z += Time*1.2-30;
 	}
-
+	else if(gl_InstanceID<2000){
+		position.x += 0.15*pow(2, teta*gl_InstanceID)*cos(teta*gl_InstanceID*Time*5);
+		position.y += 0.15*pow(2, teta*gl_InstanceID)*sin(teta*gl_InstanceID*Time*5);
+		position.z += gl_InstanceID*0.01;
+		position.z += 35*1.2-30;
+	}
 
 
 	gl_Position = Projection * View * vec4(position, 1.0);
+
 }
 
 #endif
+
 #if defined(FRAGMENT)
 uniform vec3 CameraPosition;
 uniform float Time;

@@ -57,7 +57,7 @@ void main(void)
 		position*=rotZ;
 	}
 
-	position.y += 5;
+	position.y += 4;
 
 	position*=rotZ;
 
@@ -84,8 +84,8 @@ void main(void)
 {
 	vec3 diffuse = texture(Diffuse, uv).rgb;
 	float spec = texture(Spec, uv).r;
-	Color = vec4(diffuse, spec);
-	Normal = vec4(normal, spec);
+	Color = vec4(0.7, diffuse.bg*0.5, spec);
+	Normal = vec4(0.8,0.5,0.5, spec);
 }
 
 #endif

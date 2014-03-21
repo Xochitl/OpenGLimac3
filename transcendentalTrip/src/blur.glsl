@@ -24,17 +24,20 @@ out vec4  OutColor;
 void main ()
 {
 	vec3 color = texture(Texture1, uv).rgb;
-    if(Time>24.65 && Time<25){
-        int kernel = 4;
+    vec3 mean = texture(Texture1, uv).rgb;
+    if(Time>13 && Time<=22.8){
+
+        int kernel = int(floor(Time))-12;
+        if(kernel>8) kernel = 8;
 
     	for (int i=-kernel; i<kernel; i++){
         	for (int j=-kernel; j<kernel; j++) {
-                color += texelFetch(Texture1, ivec2(gl_FragCoord) + ivec2(i,j), 0).rgb;
+                mean += texelFetch(Texture1, ivec2(gl_FragCoord) + ivec2(i,j), 0).rgb;
             }
         }
-        color /= kernel*kernel;
+        mean /= kernel*kernel;
     }
-    OutColor = vec4(color, 1.0);
+    OutColor = vec4(mix(color, mean, 0.15), 1.0);
 }
 #endif
 

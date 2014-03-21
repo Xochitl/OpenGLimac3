@@ -27,28 +27,19 @@ void main(void)
 					);
 
 	mat3 rotY = mat3(
-					cos(pi/2*Time), 0, sin(pi/2*Time),
+					cos(-pi/2), 0, sin(-pi/2),
 					0, 1, 0,
-					-sin(pi/2*Time), 0, cos(pi/2*Time) 
+					-sin(-pi/2), 0, cos(-pi/2) 
 					);
 
-	mat3 rotZ = mat3(
-					cos(pi*Time*0.01), -sin(pi*Time*0.01), 0,
-					sin(pi*Time*0.01), cos(pi*Time*0.01), 0,
-					0, 0, 1 
-					);
-
-	//Faire continuer les 32 avec 33 et ...avec TIme pour le déploiement
-	position.x += 0.2*pow(2, teta*gl_InstanceID)*cos(-teta*gl_InstanceID*32*0.1);
-	position.y += 0.2*pow(2, teta*gl_InstanceID)*sin(-teta*gl_InstanceID*32*0.1);
-	position.z += cos(32*0.1)*sin(32*0.1)*gl_InstanceID*0.01;
-
+	position.x += 0.2*pow(2, teta*gl_InstanceID)*cos(-teta*gl_InstanceID*Time*0.1);
+	position.y += 0.2*pow(2, teta*gl_InstanceID)*sin(-teta*gl_InstanceID*Time*0.1);
+	position.z += cos(Time*0.1)*sin(Time*0.1)*gl_InstanceID*0.01;
 
 	position *=rotX;
-	
-
-		position.x += 10;
-	position.y += 10;
+	position *=rotY;
+	position.z -= 10;
+	position.y += 7;
 
 
 	gl_Position = Projection * View * vec4(position, 1.0);
@@ -72,20 +63,9 @@ out vec4  Normal;
 
 void main(void)
 {
-
-
-		vec3 mean = vec3(0.f, 0.f, 0.f);
-
-	for (int i=-2; i<2; i++){
-    	for (int j=-2; j<2; j++) {
-            mean += texelFetch(Spec, ivec2(gl_FragCoord) + ivec2(i,j), 0).rgb;
-        }
-    }
-    mean /= 4*4;
- 
 	vec3 diffuse = texture(Diffuse, uv).rgb;
 	float spec = texture(Spec, uv).r;
-	Color = vec4(diffuse*10, 1);
+	Color = vec4(diffuse, spec);
 	Normal = vec4(normal, spec);
 }
 
